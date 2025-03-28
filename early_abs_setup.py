@@ -1,3 +1,7 @@
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import niagara
 from niagara import Chain, Model, ModelIntrinsicLogProb, NullTransformation, LogisticRegressionCalibrator
 from niagara import OpenAIClient, FireworksClient
@@ -16,7 +20,8 @@ llama_chain = Chain(
             thresholds={"reject": -10000, "accept": 0.0},
             conf_signal=ModelIntrinsicLogProb(),
             conf_signal_transform=NullTransformation(),
-            conf_signal_calibrator=LogisticRegressionCalibrator()
+            conf_signal_calibrator=LogisticRegressionCalibrator(),
+            client=FireworksClient(),
         )
         for name in ["llama3.2-1b", "llama3.2-3b", "llama3.1-8b", "llama3.1-70b", "llama3.1-405b"]
     ]
@@ -36,6 +41,16 @@ qwen_oai_chain = Chain(
     ]
 )
 
+# Pretty names to use in plots etc.
+PRETTY_NAMES = {
+    "mmlu": "MMLU",
+    "medmcqa": "MedMCQA",
+    "triviaqa": "TriviaQA",
+    "xsum": "XSum",
+    "gsm8k": "GSM8K",
+    "truthfulqa": "TruthfulQA",
+}
+
 def setup_data(NAME="mmlu", CHAIN_NAME="qwen_oai_chain"):
     if NAME in ['mmlu', 'medmcqa']:
         TRANSFORM = OneSidedAsymptoticLog()
@@ -50,9 +65,9 @@ def setup_data(NAME="mmlu", CHAIN_NAME="qwen_oai_chain"):
     for model in CHAIN.models:
         model.conf_signal_transform = TRANSFORM
 
-    with open(f'../../../hcma/hcma/benchmark_data/{NAME}/chain_results/{NAME}_full_{CHAIN_NAME}_results_train.pkl', 'rb') as f:
+    with open(f'benchmarks/data/{NAME}/chain_results/{NAME}_full_{CHAIN_NAME}_results_train.pkl', 'rb') as f:
         results_train = pickle.load(f)
-    with open(f'../../../hcma/hcma/benchmark_data/{NAME}/chain_results/{NAME}_full_{CHAIN_NAME}_results_test.pkl', 'rb') as f:
+    with open(f'benchmarks/data/{NAME}/chain_results/{NAME}_full_{CHAIN_NAME}_results_test.pkl', 'rb') as f:
         results_test = pickle.load(f)
 
     ### Compute calibrated confidence values
@@ -141,6 +156,10 @@ def setup_data(NAME="mmlu", CHAIN_NAME="qwen_oai_chain"):
     return {
         "chain": CHAIN, 
         "raw_results": {"train": results_train, "test": results_test},
+        "transformed_conf": {
+            "train": transformed_conf_train,
+            "test": transformed_conf_test,
+        },
         "calibrated_conf": {
                 "train": calibrated_conf_train,
                 "test": calibrated_conf_test

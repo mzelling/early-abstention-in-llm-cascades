@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors as colors
 import pandas as pd
-import numpy as np
+from sklearn.metrics import precision_recall_curve, average_precision_score
+from sklearn.linear_model import LogisticRegression
 
 def plot_pct_change(grids_test, grids_test_no, lambda_cost_grid, lambda_abs_grid, metric_name="loss", filename=None, save_fig=False):
     """ Plot a heatmap of percentage changes. """
@@ -32,7 +33,7 @@ def plot_pct_change(grids_test, grids_test_no, lambda_cost_grid, lambda_abs_grid
         center=0,
         xticklabels=False,
         yticklabels=False,
-        cbar_kws={"label": "% Change with Early Abstention"}, 
+        cbar_kws={"label": f"$\% \Delta$"}, 
         ax=ax
     )
     plt.xticks(ticks=abs_tick_indices, labels=abs_labels_subset)
@@ -48,6 +49,89 @@ def plot_pct_change(grids_test, grids_test_no, lambda_cost_grid, lambda_abs_grid
 
     if save_fig:
         plt.savefig(filename, format="pdf", bbox_inches="tight")
+
+
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+def plot_pct_change_v2(
+    grids_test,
+    grids_test_no,
+    lambda_cost_grid,
+    lambda_abs_grid,
+    metric_name="loss",
+    filename=None,
+    save_fig=False,
+    ax=None
+):
+    """
+    Plot a heatmap of percentage changes on a supplied Axes (if given),
+    or create a new Figure/Axes if not provided.
+    """
+
+    # Make font sizes a bit larger by default
+    # This ensures labels and ticks remain readable in a smaller subplot.
+    sns.set_theme(context='notebook', style='white', font_scale=1.4)
+
+    # If no Axes object is provided, create one (standalone usage).
+    own_fig = False
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(7, 5))
+        own_fig = True
+
+    # Calculate the percentage change
+    percentage_change = 100 * (
+        (np.array(grids_test[metric_name]) - np.array(grids_test_no[metric_name]))
+        / np.array(grids_test_no[metric_name])
+    )
+
+    # Define tick indices and labels for cost/abstention
+    cost_tick_indices = np.arange(0, len(lambda_cost_grid), 5)
+    cost_tick_labels = [f"{lambda_cost_grid[i]:.1g}" for i in cost_tick_indices]
+
+    abs_tick_indices = np.arange(0, len(lambda_abs_grid), 5)
+    abs_tick_labels = [f"{lambda_abs_grid[i]:.2f}" for i in abs_tick_indices]
+    # You can also simplify if desired, e.g. one decimal place:
+    # abs_tick_labels = [f"{lambda_abs_grid[i]:.1f}" for i in abs_tick_indices]
+
+    # Plot the heatmap
+    heatmap = sns.heatmap(
+        percentage_change,
+        annot=False,
+        fmt=".2f",
+        cmap="bwr",
+        center=0,
+        xticklabels=False,
+        yticklabels=False,
+        cbar_kws={"label":  "$\\% \\Delta$", "shrink": 0.8, 
+                  "aspect": 30},
+        ax=ax
+    )
+
+    # Grab the colorbar object
+    cbar = heatmap.collections[0].colorbar
+
+    # Now you can rotate its label any way you want
+    cbar.set_label("$~~~\\% \\Delta$", rotation=0)
+
+    # Manually set tick labels and positions
+    ax.set_xticks(cost_tick_indices + 0.5)
+    ax.set_xticklabels(cost_tick_labels, rotation=45, ha="right", fontsize=12)
+    ax.set_yticks(abs_tick_indices + 0.5)
+    ax.set_yticklabels(abs_tick_labels, rotation=0, fontsize=12)
+
+    ax.set_xlabel(r"$\boldsymbol{\lambda_{\text{c}}}$", fontsize=18, labelpad=10)
+    ax.set_ylabel(r"$\boldsymbol{\lambda_{\text{a}}}$  ", fontsize=18, labelpad=10).set_rotation(0)
+    
+    # If we created our own figure, apply tight_layout and possibly save/show it
+    if own_fig:
+        plt.tight_layout()
+        if save_fig and filename is not None:
+            plt.savefig(filename, format="pdf", bbox_inches="tight")
+        else:
+            plt.show()
+
 
 
 def flatten_data(data):
@@ -251,3 +335,62 @@ def generate_latex_table_3cols(
     latex.append("\\end{table}")
     
     return "\n".join(latex)
+
+
+def plot_precision_recall_curve(model, X_test, y_test, plot=False, pos_label=1, figsize=(10, 6)):
+    """
+    Compute and plot precision-recall curve for a fitted logistic regression model.
+    
+    Parameters:
+    -----------
+    model : sklearn model (e.g., LogisticRegression)
+        The fitted classification model with a predict_proba method
+    X_test : array-like
+        Test features
+    y_test : array-like
+        True labels for test data
+    plot : bool
+        Whether to plot the precision-recall curve right now.
+    pos_label : int, default=1
+        The label of the positive class
+    figsize : tuple, default=(10, 6)
+        Figure size for the plot
+        
+    Returns:
+    --------
+    precision : array
+        Precision values
+    recall : array
+        Recall values
+    thresholds : array
+        Threshold values used to compute precision and recall
+    """
+    # Get predicted probabilities for the positive class
+    y_score = model.predict_proba(X_test)[:, 1]
+    
+    # Calculate precision and recall for different thresholds
+    precision, recall, thresholds = precision_recall_curve(y_test, y_score, pos_label=pos_label)
+    
+    # Calculate average precision score
+    ap = average_precision_score(y_test, y_score, pos_label=pos_label)
+    
+    if plot:
+        # Create the precision-recall curve plot
+        plt.figure(figsize=figsize)
+        plt.plot(recall, precision, color='blue', lw=2, 
+                label=f'Precision-Recall curve (AP = {ap:.3f})')
+        
+        # Add a reference line for random classifier
+        plt.plot([0, 1], [sum(y_test == pos_label) / len(y_test)] * 2, 
+                color='red', linestyle='--', label='Random classifier')
+        
+        # Set plot aesthetics
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.title('Precision-Recall Curve')
+        plt.legend(loc='best')
+        plt.grid(True, alpha=0.3)
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+    
+    return precision, recall, thresholds

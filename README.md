@@ -18,4 +18,3 @@ pip install git+https://github.com/mzelling/niagara.git
   journal={arXiv preprint arXiv:2502.09054},
   year={2025}
 }
-```

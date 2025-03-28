@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hcma"
+version = "0.1.0"
+authors = [
+  { name="Anonymized", email="anonymous@anonymous.com" },
+]
+description = "Hierarchical LLM chains with multi-level abstention."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+  "numpy",
+  "matplotlib",
+  "scipy",
+  "tqdm",
+  "python-dotenv",
+  "openai",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+]
