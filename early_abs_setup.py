@@ -1,6 +1,10 @@
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
+
+os.environ['FIREWORKS_API_KEY'] = 'NO_NEED_TO_PROVIDE_REAL_API_KEY_BUT_LEAVE_THIS_LINE'
+os.environ['OPENAI_API_KEY'] = 'NO_NEED_TO_PROVIDE_REAL_API_KEY_BUT_LEAVE_THIS_LINE'
 
 import niagara
 from niagara import Chain, Model, ModelIntrinsicLogProb, NullTransformation, LogisticRegressionCalibrator
@@ -21,7 +25,7 @@ llama_chain = Chain(
             conf_signal=ModelIntrinsicLogProb(),
             conf_signal_transform=NullTransformation(),
             conf_signal_calibrator=LogisticRegressionCalibrator(),
-            client=FireworksClient(),
+            client=FireworksClient()
         )
         for name in ["llama3.2-1b", "llama3.2-3b", "llama3.1-8b", "llama3.1-70b", "llama3.1-405b"]
     ]
@@ -35,7 +39,7 @@ qwen_oai_chain = Chain(
             conf_signal=ModelIntrinsicLogProb(),
             conf_signal_transform=NullTransformation(),
             conf_signal_calibrator=LogisticRegressionCalibrator(),
-            client=client
+            client=client,
         )
         for name, client in [("gpt-4o-mini", OpenAIClient()), ("qwen2.5-32b-coder-instruct", FireworksClient()), ("qwen2.5-72b-instruct", FireworksClient()), ("gpt-4o", OpenAIClient())]
     ]

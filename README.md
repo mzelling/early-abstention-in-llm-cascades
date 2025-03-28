@@ -5,6 +5,11 @@ This repository contains code for reproducing results in the paper ["Cost-Saving
 ## Installation
 To be able to run the code, first install the required packages by running:
 ```bash
+python -m venv early_abs_env
+source early_abs_env/bin/activate
+```
+
+```bash
 pip install -r requirements.txt
 ```
 
