@@ -1,6 +1,8 @@
 tqdm
 numpy
 scipy
+scikit-learn
+seaborn
 statsmodels
 pandas
 datasets==3.2.0
