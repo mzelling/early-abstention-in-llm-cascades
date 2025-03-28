@@ -2,12 +2,11 @@
 
 This repository contains code for reproducing results in the paper ["Cost-Saving LLM Cascades with Early Abstention"](https://arxiv.org/abs/2502.09054).
 
-To be able to run the code, first install ["Niagara"](https://github.com/mzelling/niagara), a Python package for composing LLM cascades using arbitrary LLMs available via public APIs:
-
+## Installation
+To be able to run the code, first install the required packages by running:
 ```bash
-pip install git+https://github.com/mzelling/niagara.git
+pip install -r requirements.txt
 ```
-
 
 ## Citation
 
